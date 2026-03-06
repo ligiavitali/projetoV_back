@@ -18,24 +18,61 @@ export default class BaseRepository {
     return result.rows[0] || null;
   }
 
-  async getNextId() {
-    const result = await pool.query(
-      `SELECT COALESCE(MAX(CASE WHEN ${this.idColumn} ~ '^[0-9]+$' THEN ${this.idColumn}::BIGINT END), 0) + 1 AS next_id
-       FROM ${this.table}`
-    );
-    return String(result.rows[0].next_id);
+  async getPessoaDataIngresso(idPessoaAluno) {
+    const result = await pool.query("SELECT data_ingresso FROM pessoas WHERE id = $1", [idPessoaAluno]);
+    return result.rows[0]?.data_ingresso || null;
   }
 
   async create(payload) {
-    const fields = this.columns;
+    const shouldUseIdentity = payload[this.idColumn] === undefined || payload[this.idColumn] === null || payload[this.idColumn] === "";
+    const fields = shouldUseIdentity
+      ? this.columns.filter((field) => field !== this.idColumn)
+      : this.columns;
+
     const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
     const values = fields.map((field) => payload[field] ?? null);
 
+    try {
+      const result = await pool.query(
+        `INSERT INTO ${this.table} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`,
+        values
+      );
+      return result.rows[0];
+    } catch (error) {
+      // Compatibilidade: se a tabela antiga ainda exige id sem default, gera incremental e tenta novamente.
+      const isMissingIdError =
+        shouldUseIdentity &&
+        error?.code === "23502" &&
+        String(error?.column || "") === this.idColumn;
+
+      if (!isMissingIdError) {
+        throw error;
+      }
+
+      const nextId = await this.getNextNumericId();
+      const retryPayload = { ...payload, [this.idColumn]: nextId };
+      const retryFields = this.columns;
+      const retryPlaceholders = retryFields.map((_, i) => `$${i + 1}`).join(", ");
+      const retryValues = retryFields.map((field) => retryPayload[field] ?? null);
+
+      const retryResult = await pool.query(
+        `INSERT INTO ${this.table} (${retryFields.join(", ")}) VALUES (${retryPlaceholders}) RETURNING *`,
+        retryValues
+      );
+      return retryResult.rows[0];
+    }
+  }
+
+  async getNextNumericId() {
     const result = await pool.query(
-      `INSERT INTO ${this.table} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`,
-      values
+      `SELECT COALESCE(
+        MAX(CASE WHEN CAST(${this.idColumn} AS TEXT) ~ '^[0-9]+$' THEN CAST(${this.idColumn} AS BIGINT) END),
+        0
+      ) + 1 AS next_id
+      FROM ${this.table}`
     );
-    return result.rows[0];
+
+    return Number(result.rows[0].next_id);
   }
 
   async update(id, payload) {

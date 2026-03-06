@@ -23,6 +23,27 @@ export default class BaseService {
     return normalized;
   }
 
+  async applyAutoDataEntrada(payload) {
+    const hasDataEntradaColumn = (this.entity.columns || []).includes("data_entrada");
+    if (!hasDataEntradaColumn) {
+      return payload;
+    }
+
+    if (!payload.id_pessoa_aluno) {
+      return payload;
+    }
+
+    const dataIngresso = await this.repository.getPessoaDataIngresso(payload.id_pessoa_aluno);
+    if (!dataIngresso) {
+      return payload;
+    }
+
+    return {
+      ...payload,
+      data_entrada: dataIngresso,
+    };
+  }
+
   validateRequired(payload, requiredFields) {
     const missing = requiredFields.filter((field) => {
       const value = payload[field];
@@ -43,19 +64,17 @@ export default class BaseService {
   }
 
   async create(payload) {
-    const mapped = this.normalizeEmptyStrings(this.mapPayload(payload));
-
-    // Gera ID incremental para tabelas com PK "id" quando o cliente nao envia o campo.
-    if ((mapped.id === undefined || mapped.id === null || mapped.id === "") && this.entity.columns.includes("id")) {
-      mapped.id = await this.repository.getNextId();
-    }
+    let mapped = this.normalizeEmptyStrings(this.mapPayload(payload));
+    mapped = await this.applyAutoDataEntrada(mapped);
 
     this.validateRequired(mapped, this.entity.requiredCreate || []);
     return this.repository.create(mapped);
   }
 
   async update(id, payload) {
-    const mapped = this.normalizeEmptyStrings(this.mapPayload(payload));
+    let mapped = this.normalizeEmptyStrings(this.mapPayload(payload));
+    mapped = await this.applyAutoDataEntrada(mapped);
+
     this.validateRequired(mapped, this.entity.requiredUpdate || []);
     return this.repository.update(id, mapped);
   }
