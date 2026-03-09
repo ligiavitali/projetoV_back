@@ -25,16 +25,16 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { id, itens, status } = req.body;
+  const { itens, status } = req.body;
 
-  if (!id || !itens || !status) {
-    return res.status(400).json({ error: "Campos obrigatorios: id, itens, status." });
+  if (!itens || !status) {
+    return res.status(400).json({ error: "Campos obrigatorios: itens, status." });
   }
 
   try {
     const result = await pool.query(
-      "INSERT INTO itens_avaliacao (id, itens, status) VALUES ($1,$2,$3) RETURNING *",
-      [id, itens, status]
+      "INSERT INTO itens_avaliacao (itens, status) VALUES ($1,$2) RETURNING *",
+      [itens, status]
     );
     return res.status(201).json(result.rows[0]);
   } catch (error) {
