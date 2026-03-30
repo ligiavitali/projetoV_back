@@ -209,6 +209,7 @@ export const entities = [
       "id_empresa",
       "id_funcao",
       "provavel_data_desligamento_ieedf",
+      "status_encaminhamento",
     ],
     requiredCreate: ["id_pessoa_aluno", "id_empresa"],
     requiredUpdate: ["id_pessoa_aluno", "id_empresa"],

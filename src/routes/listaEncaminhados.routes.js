@@ -25,7 +25,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { id, id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf } = req.body;
+  const { id, id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf, status_encaminhamento } = req.body;
 
   if (!id || !id_pessoa_aluno || !id_empresa) {
     return res.status(400).json({ error: "Campos obrigatorios: id, id_pessoa_aluno, id_empresa." });
@@ -34,8 +34,8 @@ router.post("/", async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO lista_encaminhados (
-        id, id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf
-      ) VALUES ($1,$2,$3,$4,$5,$6)
+        id, id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf, status_encaminhamento
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING *`,
       [
         id,
@@ -44,6 +44,7 @@ router.post("/", async (req, res) => {
         id_empresa,
         id_funcao ?? null,
         provavel_data_desligamento_ieedf ?? null,
+        status_encaminhamento ?? "ativo",
       ]
     );
     return res.status(201).json(result.rows[0]);
@@ -53,7 +54,7 @@ router.post("/", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
-  const { id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf } = req.body;
+  const { id_pessoa_aluno, data_entrada, id_empresa, id_funcao, provavel_data_desligamento_ieedf, status_encaminhamento } = req.body;
 
   if (!id_pessoa_aluno || !id_empresa) {
     return res.status(400).json({ error: "Campos obrigatorios: id_pessoa_aluno, id_empresa." });
@@ -66,8 +67,9 @@ router.put("/:id", async (req, res) => {
         data_entrada = $2,
         id_empresa = $3,
         id_funcao = $4,
-        provavel_data_desligamento_ieedf = $5
-      WHERE id = $6
+        provavel_data_desligamento_ieedf = $5,
+        status_encaminhamento = $6
+      WHERE id = $7
       RETURNING *`,
       [
         id_pessoa_aluno,
@@ -75,6 +77,7 @@ router.put("/:id", async (req, res) => {
         id_empresa,
         id_funcao ?? null,
         provavel_data_desligamento_ieedf ?? null,
+        status_encaminhamento ?? "ativo",
         req.params.id,
       ]
     );

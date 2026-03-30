@@ -139,9 +139,11 @@ CREATE TABLE IF NOT EXISTS lista_encaminhados (
   id_empresa INTEGER NOT NULL,
   id_funcao INTEGER,
   provavel_data_desligamento_ieedf DATE,
+  status_encaminhamento VARCHAR(20) NOT NULL DEFAULT 'ativo',
   CONSTRAINT fk_encaminhados_pessoa FOREIGN KEY (id_pessoa_aluno) REFERENCES pessoas(id),
   CONSTRAINT fk_encaminhados_empresa FOREIGN KEY (id_empresa) REFERENCES empresas(id),
-  CONSTRAINT fk_encaminhados_funcao FOREIGN KEY (id_funcao) REFERENCES funcoes_cargos(id)
+  CONSTRAINT fk_encaminhados_funcao FOREIGN KEY (id_funcao) REFERENCES funcoes_cargos(id),
+  CONSTRAINT chk_encaminhados_status CHECK (status_encaminhamento IN ('ativo', 'inativo'))
 );
 `;
 
@@ -155,5 +157,17 @@ export const ensureDatabaseSchema = async () => {
 
   await pool.query(
     "ALTER TABLE IF EXISTS listas_encaminhados ADD COLUMN IF NOT EXISTS data_encaminhamento DATE"
+  );
+
+  await pool.query(
+    "ALTER TABLE IF EXISTS lista_encaminhados ADD COLUMN IF NOT EXISTS status_encaminhamento VARCHAR(20) NOT NULL DEFAULT 'ativo'"
+  );
+
+  await pool.query(
+    "ALTER TABLE IF EXISTS lista_encaminhados DROP CONSTRAINT IF EXISTS chk_encaminhados_status"
+  );
+
+  await pool.query(
+    "ALTER TABLE IF EXISTS lista_encaminhados ADD CONSTRAINT chk_encaminhados_status CHECK (status_encaminhamento IN ('ativo', 'inativo'))"
   );
 };

@@ -20,6 +20,7 @@ const normalizeUsuarios = (usuarios) => {
     contatoRH: usuario?.contatoRH || "",
     dataEncaminhamento: usuario?.dataEncaminhamento || "",
     provavelDataDesligamento: usuario?.provavelDataDesligamento || "",
+    statusEncaminhamento: usuario?.statusEncaminhamento || "ativo",
   }));
 };
 
