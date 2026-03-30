@@ -1,4 +1,18 @@
-import { Router } from "express";
+// ...existing code...
+router.post("/", async (req, res) => {
+  const { id, nome, email, senha_hash, senha, token_recuperacao, validade_token, nivel_acesso, tipo, usa_medicamento } = req.body;
+
+  if (!id || !nome || !email || !(senha_hash || senha)) {
+    return res.status(400).json({ error: "Campos obrigatorios: id, nome, email, senha_hash (ou senha)." });
+  }
+
+  // Validação: só aceita 'usa_medicamento' se for aluno
+  if (tipo === "aluno" && typeof usa_medicamento === "undefined") {
+    return res.status(400).json({ error: "Campo 'usa medicamento?' é obrigatório para alunos." });
+  }
+
+  // ...restante do código...
+});import { Router } from "express";
 import { pool } from "../db.js";
 import crypto from "crypto";
 

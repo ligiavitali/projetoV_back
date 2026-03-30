@@ -26,7 +26,6 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const {
-    id,
     nome,
     email,
     telefone,
@@ -41,19 +40,18 @@ router.post("/", async (req, res) => {
     status,
   } = req.body;
 
-  if (!id || !nome || !email || !status) {
-    return res.status(400).json({ error: "Campos obrigatorios: id, nome, email, status." });
+  if (!nome || !email || !status) {
+    return res.status(400).json({ error: "Campos obrigatorios: nome, email, status." });
   }
 
   try {
     const result = await pool.query(
       `INSERT INTO pessoas (
-        id, nome, email, telefone, cpf, perfil, data_ingresso, data_nascimento,
+        nome, email, telefone, cpf, perfil, data_ingresso, data_nascimento,
         nome_responsavel, telefone_responsavel, usa_medicamento, info_medicamentos, status
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *`,
       [
-        id,
         nome,
         email,
         telefone ?? null,
